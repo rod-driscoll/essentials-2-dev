@@ -1,0 +1,5 @@
+# Pre-built release binaries - download from GitHub releases instead
+releases/
+
+# Dependencies
+mobile-control-ui/node_modules/

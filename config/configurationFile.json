@@ -1,0 +1,82 @@
+{
+  "system_url": "",
+  "template_url": "",
+  "system": {},
+  "template": {
+    "info": {
+      "processorType": "cp4",
+      "lastModifiedDate": "2026-03-19",
+      "systemType": "huddle",
+      "comment": "Starter config - experiment room with mock devices"
+    },
+    "devices": [
+      {
+        "key": "mobileControl",
+        "name": "Mobile Control",
+        "type": "mobilecontrol",
+        "group": "api",
+        "properties": {
+          "enableApiServer": true,
+          "directServer": {
+            "enableDirectServer": true,
+            "port": 50002
+          }
+        }
+      },
+      {
+        "key": "display-1",
+        "name": "Mock Display",
+        "type": "mockdisplay",
+        "group": "display",
+        "properties": {}
+      }
+    ],
+    "rooms": [
+      {
+        "key": "room1",
+        "name": "Experiment Room",
+        "type": "huddle",
+        "properties": {
+          "defaultDisplayKey": "display-1",
+          "defaultAudioKey": "display-1",
+          "sourceListKey": "default",
+          "defaultSourceItem": "source-1",
+          "hasDsp": false,
+          "helpMessage": "",
+          "defaultVideoBehavior": "basic",
+          "volumes": {
+            "master": {
+              "level": 40,
+              "deviceKey": "display-1",
+              "label": "Volume"
+            }
+          },
+          "logo": {
+            "type": "system",
+            "url": ""
+          },
+          "tech": {
+            "password": "1234"
+          }
+        }
+      }
+    ],
+    "sourceLists": {
+      "default": {
+        "roomOff": {
+          "order": 1,
+          "sourceKey": "$off",
+          "type": "off",
+          "routeList": [
+            {
+              "sourceKey": "$off",
+              "type": "audioVideo",
+              "destinationKey": "$defaultAll"
+            }
+          ]
+        }
+      }
+    },
+    "tieLines": []
+  }
+}

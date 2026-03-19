@@ -1,0 +1,14 @@
+{
+  "name": "pepperdash-essentials-experiment",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev":             "npm run dev --prefix mobile-control-ui",
+    "build":           "npm run build --prefix mobile-control-ui",
+    "install:ui":      "npm install --prefix mobile-control-ui",
+    "get-release":     "pwsh scripts/get-release.ps1",
+    "deploy":          "pwsh scripts/deploy-processor.ps1 -ProcessorIp 192.168.104.171",
+    "deploy:config":   "pwsh scripts/deploy-processor.ps1 -ProcessorIp 192.168.104.171 -ConfigOnly",
+    "deploy:all":      "pwsh scripts/deploy-all.ps1"
+  }
+}

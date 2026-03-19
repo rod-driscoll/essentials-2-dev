@@ -1,5 +1,5 @@
 {
-  "system_url": "",
+  "system_url": "https://localhost/systems/local/#room1",
   "template_url": "",
   "system": {},
   "template": {
@@ -16,10 +16,12 @@
         "type": "mobilecontrol",
         "group": "api",
         "properties": {
+          "serverUrl": "http://localhost",
           "enableApiServer": true,
           "directServer": {
             "enableDirectServer": true,
-            "port": 50002
+            "port": 50002,
+            "tokenKey": "local-dev-secret-1234"
           }
         }
       },

@@ -105,7 +105,9 @@ essentials-2-dev/
 ├── config/
 │   └── configurationFile.json          # Essentials config — deploy to processor
 ├── mobile-control-ui/                  # React UI (cloned from mobile-control-react-app-core)
-│   ├── vite.config.ts                  # base: '/mc/app/' — required for config fetch to work
+│   ├── vite.config.ts                  # library build (npm publish) — NOT for processor deploy
+│   ├── vite.config.app.ts              # app build — use this for touchpanel/processor deploy
+│   ├── dist-app/                       # gitignored — output of npm run build:app
 │   └── public/_local-config/
 │       ├── _config.default.json        # template — committed, edit as example
 │       └── _config.local.json          # gitignored — set your processor IP here
@@ -115,6 +117,7 @@ essentials-2-dev/
 └── scripts/
     ├── get-release.ps1                 # download latest Essentials CPZ from GitHub
     ├── deploy-processor.ps1            # upload CPZ + config + plugins, progload
+    ├── deploy-ui.ps1                   # build React app and SFTP to /user/program1/mcUserApp/
     └── deploy-all.ps1                  # deploy + start UI dev server
 ```
 
@@ -278,7 +281,9 @@ MOBILEREMOVEALLCLIENTS                     — remove all clients
 npm run get-release         # Download latest Essentials CPZ to releases/
 npm run deploy              # Deploy CPZ + config + plugins to 192.168.104.171
 npm run deploy:config       # Config file only (no CPZ, no progload)
+npm run deploy:ui           # Build React app and deploy to /user/program1/mcUserApp/
 npm run deploy:all          # Deploy + start UI dev server
+npm run build:app           # Build React app only (output: mobile-control-ui/dist-app/)
 npm run dev                 # Start UI dev server only
 ```
 
@@ -355,18 +360,32 @@ Replace `mockdisplay` with a real display driver. Add the appropriate CPLZ plugi
 
 ### 4. Production Deployment (Touchpanel)
 
-Build the React app and host it so touchpanels can reach it without the dev server:
+The Mobile Control direct server serves static files from `/user/program{slot}/mcUserApp/`
+on the processor filesystem, mapped to the `/mc/app` HTTP route. This is hardcoded in
+`MobileControlWebsocketServer.cs` (`_appPath = FilePathPrefix + "mcUserApp"`).
+
+Build and deploy in one step:
 
 ```powershell
-cd mobile-control-ui
-npm run build      # output in dist/
+npm run deploy:ui    # builds dist-app/ then SFTPs to /user/program1/mcUserApp/
 ```
 
-Options for hosting:
+Or separately:
 
-- **Separate web server** (simplest): serve `dist/` from IIS, nginx, or similar on your PC/server
-- **On-processor** (TBD): determine if the MC direct server can serve static files from
-  `/user/program1/mc/app/` on the CP4
+```powershell
+npm run build:app                                     # builds mobile-control-ui/dist-app/
+pwsh scripts/deploy-ui.ps1 -ProcessorIp 192.168.104.171 -SkipBuild   # upload only
+```
+
+After deploy, touchpanel URL (no token needed with room-list mode):
+
+```text
+http://192.168.104.171:50002/mc/app
+```
+
+Note: `npm run build` (no `:app`) builds the **library** package for npm — not what you
+want for deployment. Use `build:app` which uses `vite.config.app.ts` and outputs a
+self-contained `index.html` + `assets/` in `dist-app/`.
 
 ### 5. Persistent Client Registration
 

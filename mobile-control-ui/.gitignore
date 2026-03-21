@@ -11,10 +11,6 @@ node_modules
 dist
 dist-app
 dist-ssr
-
-# PepperDash CI/CD — not applicable to this fork
-.github/
-.releaserc.json
 *.local
 public/_local-config/_config.local.json
 

@@ -1,6 +1,7 @@
 # Pre-built release binaries - download from GitHub releases instead
 releases/
 
-# Mobile Control UI — clone separately from:
-# https://github.com/PepperDash/mobile-control-react-app-core.git
-mobile-control-ui/
+# Mobile Control UI build outputs (source is tracked)
+mobile-control-ui/node_modules/
+mobile-control-ui/dist/
+mobile-control-ui/dist-app/

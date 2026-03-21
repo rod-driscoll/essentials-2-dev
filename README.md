@@ -21,6 +21,10 @@ Full end-to-end connection is working:
 - Rebuilt rooms plugin CPLZ in `releases/` (see Known Issues #1)
 - Node.js for the React dev server
 
+> **Mobile Control is bundled in the CPZ.** `epi-essentials-mobile-control.dll` and
+> `mobile-control-messengers.dll` are included inside `PepperDashEssentials.2.28.0.net472.cpz`
+> — no separate mobile control CPLZ is needed or should be added to `releases/`.
+
 ### 1. Deploy to processor (first time or after CPZ/plugin change)
 
 ```powershell
@@ -89,9 +93,10 @@ Then just open `http://localhost:5173/mc/app` — the UI lists rooms and connect
 
 ### Rooms Plugin (separate repo — see Known Issues below)
 
-- **Repo**: <https://github.com/PepperDash/epi-essentials-rooms>
-- **Active branch**: `development`
-- **Latest release**: `0.1.0-rc-2` — **incompatible with Essentials v2.28.0**
+- **Upstream repo**: <https://github.com/PepperDash/epi-essentials-rooms>
+- **Fork (with v2 fixes)**: <https://github.com/rod-driscoll/epi-essentials-rooms> — branch `feature/essentials-v2-compat`
+- **Upstream latest release**: `0.1.0-rc-2` — **incompatible with Essentials v2.28.0** (use the fork)
+- **Built plugin**: `releases/PDT.Plugins.Essentials.Rooms-2.1.0.cplz`
 
 ---
 

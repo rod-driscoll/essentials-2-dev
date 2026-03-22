@@ -1,0 +1,268 @@
+{
+  "system_url": "https://localhost/systems/local/#room1",
+  "template_url": "",
+  "system": {},
+  "template": {
+    "info": {
+      "processorType": "cp4",
+      "lastModifiedDate": "2026-03-22",
+      "systemType": "dual-display",
+      "comment": "Dual-display config — two Samsung MDC displays + QSC DSP"
+    },
+    "devices": [
+      {
+        "key": "mobileControl",
+        "name": "Mobile Control",
+        "type": "mobilecontrol",
+        "group": "api",
+        "properties": {
+          "serverUrl": "http://localhost",
+          "enableApiServer": true,
+          "directServer": {
+            "enableDirectServer": true,
+            "port": 50002,
+            "tokenKey": "local-dev-secret-1234"
+          }
+        }
+      },
+      {
+        "key": "display-1",
+        "name": "Samsung Display 1",
+        "type": "samsungMdcPlugin",
+        "group": "display",
+        "properties": {
+          "id": "00",
+          "pollIntervalMs": 4500,
+          "pollLedTemps": false,
+          "warmingTimeMs": 1500,
+          "coolingTimeMs": 1500,
+          "showVolumeControls": false,
+          "activeInputs": [
+            { "key": "hdmi1", "name": "HDMI 1" },
+            { "key": "hdmi2", "name": "HDMI 2" }
+          ],
+          "control": {
+            "method": "tcpIp",
+            "tcpSshProperties": {
+              "address": "192.168.41.242",
+              "port": 1515,
+              "autoReconnect": true,
+              "autoReconnectIntervalMs": 10000
+            }
+          }
+        }
+      },
+      {
+        "key": "display-2",
+        "name": "Samsung Display 2",
+        "type": "samsungMdcPlugin",
+        "group": "display",
+        "properties": {
+          "id": "00",
+          "pollIntervalMs": 4500,
+          "pollLedTemps": false,
+          "warmingTimeMs": 1500,
+          "coolingTimeMs": 1500,
+          "showVolumeControls": false,
+          "activeInputs": [
+            { "key": "hdmi1", "name": "HDMI 1" },
+            { "key": "hdmi2", "name": "HDMI 2" }
+          ],
+          "control": {
+            "method": "tcpIp",
+            "tcpSshProperties": {
+              "address": "192.168.41.182",
+              "port": 1515,
+              "autoReconnect": true,
+              "autoReconnectIntervalMs": 10000
+            }
+          }
+        }
+      },
+      {
+        "key": "source-1",
+        "name": "HDMI 1",
+        "type": "laptop",
+        "group": "source",
+        "properties": {}
+      },
+      {
+        "key": "source-2",
+        "name": "HDMI 2",
+        "type": "genericSource",
+        "group": "source",
+        "properties": {}
+      },
+      {
+        "key": "source-3",
+        "name": "PC",
+        "type": "genericSource",
+        "group": "source",
+        "properties": {}
+      },
+      {
+        "key": "dsp-1",
+        "name": "Q-SYS DSP",
+        "type": "qscdsp",
+        "group": "dsp",
+        "properties": {
+          "control": {
+            "method": "tcpIp",
+            "tcpSshProperties": {
+              "address": "192.168.104.220",
+              "port": 1702,
+              "autoReconnect": true,
+              "autoReconnectIntervalMs": 10000
+            }
+          },
+          "levelControlBlocks": {
+            "program": {
+              "levelInstanceTag": "ProgramGain",
+              "muteInstanceTag": "ProgramMute",
+              "hasLevel": true,
+              "hasMute": true,
+              "disabled": false
+            }
+          }
+        }
+      }
+    ],
+    "rooms": [
+      {
+        "key": "room1",
+        "name": "Conference Room",
+        "type": "huddle",
+        "properties": {
+          "defaultDisplayKey": "display-1",
+          "defaultAudioKey": "dsp-1",
+          "sourceListKey": "default",
+          "defaultSourceItem": "source-1",
+          "hasDsp": true,
+          "helpMessage": "",
+          "defaultVideoBehavior": "basic",
+          "volumes": {
+            "master": {
+              "level": 40,
+              "deviceKey": "dsp-1",
+              "label": "Volume",
+              "levelInstanceTag": "program"
+            }
+          },
+          "logo": {
+            "type": "system",
+            "url": ""
+          },
+          "tech": {
+            "password": "1234"
+          }
+        }
+      }
+    ],
+    "sourceLists": {
+      "default": {
+        "roomOff": {
+          "order": 0,
+          "sourceKey": "$off",
+          "type": "off",
+          "includeInSourceList": false,
+          "routeList": [
+            {
+              "sourceKey": "$off",
+              "type": "audioVideo",
+              "destinationKey": "$defaultAll"
+            }
+          ]
+        },
+        "source-1": {
+          "order": 1,
+          "name": "HDMI 1",
+          "preferredName": "HDMI 1",
+          "includeInSourceList": true,
+          "sourceKey": "source-1",
+          "type": "Route",
+          "routeList": [
+            {
+              "sourceKey": "source-1",
+              "type": "audioVideo",
+              "destinationKey": "$defaultAll"
+            }
+          ]
+        },
+        "source-2": {
+          "order": 2,
+          "name": "HDMI 2",
+          "preferredName": "HDMI 2",
+          "includeInSourceList": true,
+          "sourceKey": "source-2",
+          "type": "Route",
+          "routeList": [
+            {
+              "sourceKey": "source-2",
+              "type": "audioVideo",
+              "destinationKey": "$defaultAll"
+            }
+          ]
+        },
+        "source-3": {
+          "order": 3,
+          "name": "PC",
+          "preferredName": "PC",
+          "includeInSourceList": true,
+          "sourceKey": "source-3",
+          "type": "Route",
+          "routeList": [
+            {
+              "sourceKey": "source-3",
+              "type": "audioVideo",
+              "destinationKey": "$defaultAll"
+            }
+          ]
+        }
+      }
+    },
+    "tieLines": [
+      {
+        "sourceKey": "source-1",
+        "sourcePort": "anyOut",
+        "destinationKey": "display-1",
+        "destinationPort": "hdmiIn1",
+        "type": "audioVideo"
+      },
+      {
+        "sourceKey": "source-1",
+        "sourcePort": "anyOut",
+        "destinationKey": "display-2",
+        "destinationPort": "hdmiIn1",
+        "type": "audioVideo"
+      },
+      {
+        "sourceKey": "source-2",
+        "sourcePort": "anyOut",
+        "destinationKey": "display-1",
+        "destinationPort": "hdmiIn2",
+        "type": "audioVideo"
+      },
+      {
+        "sourceKey": "source-2",
+        "sourcePort": "anyOut",
+        "destinationKey": "display-2",
+        "destinationPort": "hdmiIn2",
+        "type": "audioVideo"
+      },
+      {
+        "sourceKey": "source-3",
+        "sourcePort": "anyOut",
+        "destinationKey": "display-1",
+        "destinationPort": "hdmiIn1",
+        "type": "audioVideo"
+      },
+      {
+        "sourceKey": "source-3",
+        "sourcePort": "anyOut",
+        "destinationKey": "display-2",
+        "destinationPort": "hdmiIn1",
+        "type": "audioVideo"
+      }
+    ]
+  }
+}

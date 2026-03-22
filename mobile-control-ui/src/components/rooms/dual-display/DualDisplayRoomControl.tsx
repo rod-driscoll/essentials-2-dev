@@ -1,39 +1,69 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MainLayout } from '../../lib/shared/layout/habanero/MainLayout/MainLayout';
+import { MainLayout } from '../../../lib/shared/layout/habanero/MainLayout/MainLayout';
 import {
   useRoomName,
   useRoomSourceList,
-  useRoomIsOn,
-  useRoomState,
-} from '../../lib/store/rooms/rooms.hooks';
-import { useIRunRouteAction } from '../../lib/shared/hooks/interfaces/useIRunRouteAction';
-import { useRoomIBasicVolumeWithFeedback } from '../../lib/shared/hooks/useRoomIBasicVolumeWithFeedback';
-import { useIRunDefaultPresentRoute } from '../../lib/shared/hooks/interfaces/useIRunDefaultPresentRoute';
-import { useGetDevice } from '../../lib/store/devices/devices.hooks';
-import { DisplayState } from '../../lib/types';
+} from '../../../lib/store/rooms/rooms.hooks';
+import { useIRunRouteAction } from '../../../lib/shared/hooks/interfaces/useIRunRouteAction';
+import { useRoomIBasicVolumeWithFeedback } from '../../../lib/shared/hooks/useRoomIBasicVolumeWithFeedback';
+import { useIRunDefaultPresentRoute } from '../../../lib/shared/hooks/interfaces/useIRunDefaultPresentRoute';
+import { useGetDevice } from '../../../lib/store/devices/devices.hooks';
+import { DisplayState } from '../../../lib/types';
 
-const RoomControl = () => {
+const DisplayCard = ({
+  label,
+  isOn,
+}: {
+  label: string;
+  isOn: boolean;
+}) => (
+  <div
+    style={{
+      flex: 1,
+      padding: '0.75rem 1rem',
+      borderRadius: '6px',
+      border: `1px solid ${isOn ? '#4caf50' : '#444'}`,
+      background: isOn ? '#1b3a1f' : '#1a1a1a',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+    }}
+  >
+    <span style={{ fontSize: '0.75rem', color: isOn ? '#4caf50' : '#666' }}>
+      {isOn ? '●' : '○'}
+    </span>
+    <span style={{ fontSize: '0.85rem', color: isOn ? '#a5d6a7' : '#888' }}>{label}</span>
+    <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: isOn ? '#4caf50' : '#666' }}>
+      {isOn ? 'On' : 'Off'}
+    </span>
+  </div>
+);
+
+const DualDisplayRoomControl = () => {
   const { roomKey } = useParams<{ roomKey: string }>();
   const navigate = useNavigate();
 
   const name = useRoomName(roomKey!);
   const sourceList = useRoomSourceList(roomKey!);
-  const isOn = useRoomIsOn(roomKey!);
-  const room = useRoomState(roomKey!);
 
   const routeAction = useIRunRouteAction(roomKey!);
   const volume = useRoomIBasicVolumeWithFeedback(roomKey!, 'master');
   const { runDefaultPresentRoute } = useIRunDefaultPresentRoute(roomKey!);
-  const displayState = useGetDevice<DisplayState>('display-1');
-  const displayIsOn = !!displayState?.powerState;
+
+  const display1 = useGetDevice<DisplayState>('display-1');
+  const display2 = useGetDevice<DisplayState>('display-2');
+  const display1IsOn = !!display1?.powerState;
+  const display2IsOn = !!display2?.powerState;
+  const eitherOn = display1IsOn || display2IsOn;
+
+  const [selectedSourceKey, setSelectedSourceKey] = useState<string | undefined>(undefined);
 
   const sources = sourceList
     ? Object.entries(sourceList)
         .filter(([, s]) => s.includeInSourceList)
         .sort(([, a], [, b]) => a.order - b.order)
     : [];
-
-  const currentSourceKey = room?.selectedSourceKey;
 
   return (
     <MainLayout
@@ -54,38 +84,48 @@ const RoomControl = () => {
             ← Rooms
           </button>
           <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>{name ?? roomKey}</span>
-          <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: displayIsOn ? '#4caf50' : '#888' }}>
-            {displayIsOn ? '● On' : '○ Off'}
+          <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: eitherOn ? '#4caf50' : '#888' }}>
+            {eitherOn ? '● On' : '○ Off'}
           </span>
         </div>
       }
       content={
         <div style={{ padding: '1.5rem', overflowY: 'auto', height: '100%', boxSizing: 'border-box' }}>
-          <h3 style={{ marginBottom: '0.75rem' }}>Display</h3>
+
+          {/* Display status */}
+          <h3 style={{ marginBottom: '0.75rem' }}>Displays</h3>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+            <DisplayCard label="Display 1" isOn={display1IsOn} />
+            <DisplayCard label="Display 2" isOn={display2IsOn} />
+          </div>
+
+          {/* Power controls */}
           <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem' }}>
             <button
               onClick={runDefaultPresentRoute}
               style={{
-                padding: '0.75rem 1.5rem',
+                flex: 1,
+                padding: '0.75rem 1rem',
                 fontSize: '0.9rem',
                 cursor: 'pointer',
                 borderRadius: '6px',
-                border: displayIsOn ? '2px solid #4caf50' : '1px solid #444',
-                background: displayIsOn ? '#1b5e20' : '#222',
+                border: eitherOn ? '2px solid #4caf50' : '1px solid #444',
+                background: eitherOn ? '#1b5e20' : '#222',
                 color: '#fff',
               }}
             >
               Power On
             </button>
             <button
-              onClick={() => routeAction?.runRoute({ sourceListItemKey: 'roomOff' })}
+              onClick={() => { routeAction?.runRoute({ sourceListItemKey: 'roomOff' }); setSelectedSourceKey(undefined); }}
               style={{
-                padding: '0.75rem 1.5rem',
+                flex: 1,
+                padding: '0.75rem 1rem',
                 fontSize: '0.9rem',
                 cursor: 'pointer',
                 borderRadius: '6px',
-                border: !displayIsOn ? '2px solid #f44336' : '1px solid #444',
-                background: !displayIsOn ? '#b71c1c' : '#222',
+                border: !eitherOn ? '2px solid #f44336' : '1px solid #444',
+                background: !eitherOn ? '#b71c1c' : '#222',
                 color: '#fff',
               }}
             >
@@ -93,6 +133,7 @@ const RoomControl = () => {
             </button>
           </div>
 
+          {/* Sources */}
           <h3 style={{ marginBottom: '1rem' }}>Sources</h3>
           {sources.length === 0 ? (
             <p style={{ color: '#888' }}>No sources configured</p>
@@ -103,7 +144,7 @@ const RoomControl = () => {
                 return (
                   <button
                     key={key}
-                    onClick={() => routeAction?.runRoute({ sourceListItemKey: key })}
+                    onClick={() => { routeAction?.runRoute({ sourceListItemKey: key }); setSelectedSourceKey(key); }}
                     style={{
                       padding: '1rem',
                       fontSize: '0.9rem',
@@ -122,6 +163,7 @@ const RoomControl = () => {
             </div>
           )}
 
+          {/* Volume */}
           <h3 style={{ marginBottom: '0.75rem' }}>Volume</h3>
           {volume ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -167,4 +209,4 @@ const RoomControl = () => {
   );
 };
 
-export default RoomControl;
+export default DualDisplayRoomControl;

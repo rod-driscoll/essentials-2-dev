@@ -171,7 +171,16 @@
       "Bash(DLL=\"C:/Users/RODDRI~1/AppData/Local/Temp/samsung-mdc-fix/src/4Series/bin/Release/net472/epi-display-samsung-mdc.4Series.dll\")",
       "Bash(rm \"$RELEASES/epi-display-samsung-mdc.4Series.1.6.2.cplz\")",
       "Bash(python -c \":*)",
-      "Bash(gh pr:*)"
+      "Bash(gh pr:*)",
+      "Bash(grep -E '\\\\.\\(cs|ts|tsx\\)$')",
+      "Bash(find . -type f \\\\\\(-name *.cs -o -name *.csproj \\\\\\))",
+      "Bash(xargs cat:*)",
+      "Bash(MSBuild.exe \"PDT.Plugins.Essentials.Rooms.sln\" /p:Configuration=Release /p:Platform=\"Any CPU\" /t:Build)",
+      "Read(//c/Program Files/Microsoft Visual Studio/**)",
+      "Read(//c/Program Files \\(x86\\)/Microsoft Visual Studio/**)",
+      "Bash(\"/c/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe\" \"PDT.Plugins.Essentials.Rooms.sln\" /p:Configuration=Release /p:Platform=\"Any CPU\" /t:Build)",
+      "Bash(powershell.exe -Command \"Add-Type -Assembly ''System.IO.Compression.FileSystem''; $z = [System.IO.Compression.ZipFile]::OpenRead\\(''C:\\\\Users\\\\RodDriscoll\\\\The Avit Group\\\\Programming Comissioning - Documents\\\\Crestron\\\\repos\\\\PepperDash\\\\essentials-2-dev\\\\releases\\\\PDT.Plugins.Essentials.Rooms-2.1.0.cplz''\\); $z.Entries | Select-Object FullName; $z.Dispose\\(\\)\")",
+      "Bash(powershell.exe -Command \":*)"
     ],
     "additionalDirectories": [
       "C:\\Users\\RODDRI~1\\AppData\\Local\\Temp\\output",

@@ -61,14 +61,13 @@
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', '')]
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [Parameter(Mandatory)]
     [string] $ProcessorIp,
 
     [ValidateRange(1, 10)]
-    [int]    $Slot       = 1,
+    [int]    $Slot       = 0,    # 0 = unset; resolved from .env or defaulted to 1 below
 
-    [string] $Username   = 'admin',
-    [string] $Password   = '',
+    [string] $Username,
+    [string] $Password,
 
     [string] $CpzPath,
     [string] $ConfigPath,
@@ -79,6 +78,29 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
+
+# ─── Load .env defaults ───────────────────────────────────────────────────────
+
+. "$PSScriptRoot\load-env.ps1"
+$envCfg = Read-EnvFile (Join-Path $root '.env')
+
+if (-not $PSBoundParameters.ContainsKey('ProcessorIp') -and $envCfg['PROCESSOR_IP']) {
+    $ProcessorIp = $envCfg['PROCESSOR_IP']
+}
+if ((-not $PSBoundParameters.ContainsKey('Slot') -or $Slot -eq 0) -and $envCfg['PROCESSOR_SLOT']) {
+    $Slot = [int]$envCfg['PROCESSOR_SLOT']
+}
+if (-not $PSBoundParameters.ContainsKey('Username')) {
+    $Username = if ($envCfg['PROCESSOR_USERNAME']) { $envCfg['PROCESSOR_USERNAME'] } else { 'admin' }
+}
+if (-not $PSBoundParameters.ContainsKey('Password')) {
+    $Password = if ($envCfg['PROCESSOR_PASSWORD']) { $envCfg['PROCESSOR_PASSWORD'] } else { '' }
+}
+if ($Slot -eq 0) { $Slot = 1 }
+
+if (-not $ProcessorIp) {
+    throw "ProcessorIp is required. Pass -ProcessorIp or set PROCESSOR_IP in .env"
+}
 
 function Write-Step([string] $msg) {
     Write-Host "`n==> $msg" -ForegroundColor Cyan
@@ -255,4 +277,4 @@ Write-Host "       MOBILEADDUICLIENT ?" -ForegroundColor DarkGray
 Write-Host "  2. Start the mobile UI dev server:"
 Write-Host "       npm run dev" -ForegroundColor DarkGray
 Write-Host "  3. Open in browser:"
-Write-Host "       http://localhost:5173/mc/app?token=<value>" -ForegroundColor DarkGray
+Write-Host '       http://localhost:5173/mc/app?token=<value>' -ForegroundColor DarkGray

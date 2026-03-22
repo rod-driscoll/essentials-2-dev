@@ -79,6 +79,30 @@ All controls must be in the `content` prop of `MainLayout` — the `footer` area
 - `useRoomIBasicVolumeWithFeedback(roomKey, type)` — volume/mute with feedback; returns `undefined` until room state loads
 - `useGetDevice<T>(deviceKey)` — raw device state from Redux (e.g. `DisplayState` for power feedback)
 
+### Source selection feedback
+
+The Essentials MobileControl bridge serializes room state from a fixed schema — adding properties
+to the C# room class does NOT cause them to appear in the `/room/room1` WebSocket message.
+`room.selectedSourceKey` is never populated for `IEssentialsHuddleSpaceRoom`.
+
+Instead, use the display device's `inputs` state, which IS sent reliably via `/device/display-1`
+as `IHasInputsStateMessage`. Each item has `{ key, name, isSelected }`:
+
+```typescript
+const displayInputs = (displayState as any)?.inputs?.items as
+  | Record<string, { key: string; name: string; isSelected: boolean }>
+  | undefined;
+const selectedInputName = displayInputs
+  ? Object.values(displayInputs).find(i => i.isSelected)?.name
+  : undefined;
+const selectedSourceKey = selectedInputName && sourceList
+  ? Object.entries(sourceList).find(([, s]) => s.name === selectedInputName)?.[0]
+  : undefined;
+```
+
+**Requirement:** the display `activeInputs[].name` values must match the source list item `name`
+values exactly (e.g. both `"HDMI 1"`). This is the only join between the two.
+
 ### Build for processor deploy
 ```powershell
 npm run deploy:ui   # builds dist-app/ then SFTPs to /user/program1/mcUserApp/
@@ -130,10 +154,16 @@ not via a DSP. Set `hasDsp: false` in room properties when using display volume.
 ### Rooms plugin
 
 The upstream `epi-essentials-rooms` release is **incompatible** with Essentials v2.28.0.
-Use the rebuilt plugin in `releases/PDT.Plugins.Essentials.Rooms-2.1.0.cplz` (rebuilt from
-the fork `rod-driscoll/epi-essentials-rooms`, branch `feature/essentials-v2-compat`).
+Use the rebuilt plugin in `releases/PDT.Plugins.Essentials.Rooms-2.1.1.cplz` (built from
+the fork `rod-driscoll/epi-essentials-rooms`, branch `feature/selected-source-key-feedback`,
+which is based on `feature/essentials-v2-compat`).
 
 Do not replace this with the upstream `-compat.cplz` from GitHub — it will silently fail to load.
+
+The `2.1.1` build adds `SelectedSourceKey` and `CurrentSourceInfoKey` properties to both
+`EssentialsHuddleSpaceRoom` and `EssentialsDualDisplayRoom`. These do NOT currently appear in
+the MobileControl WebSocket room state (the bridge ignores arbitrary properties), but the
+properties are there for future use if the bridge serialization is ever extended.
 
 ### Samsung MDC display plugin
 
@@ -163,6 +193,8 @@ Do not replace this with `v1.6.1` or `v1.6.2` from GitHub until the PR is merged
 | Samsung MDC crashes on volume feedback | Use patched CPLZ — see Samsung MDC plugin note above |
 | Volume hook returns `undefined` on load | Transient — resolves once room state arrives via WebSocket |
 | Footer buttons non-interactive in MainLayout | Put all controls in the `content` prop, not `footer` |
+| Source button highlight never updates | `room.selectedSourceKey` is never sent — use display `inputs.items[].isSelected` instead |
+| Multiple config files cause load error | Processor globs `*configurationFile*.json` — only one must exist in `/user/program1/` |
 | Git checkout fails on Windows | Run `git config --global core.longpaths true` first |
 
 ---

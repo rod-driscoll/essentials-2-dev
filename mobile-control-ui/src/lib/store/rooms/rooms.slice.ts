@@ -14,16 +14,12 @@ const roomsSlice = createSlice({
             const type = action.payload.type;            
             const key = type.slice(type.lastIndexOf('/') + 1);            
 
-            // console.log(type, key);
-
             if(!key) return;
-            
+
             // This method solves the issue of multiple layers of properties
             // and avoids doing a deep copy of the object
 
             const content = action.payload.content as RoomState;
-
-            // console.log(content);
 
             // Get existing room state
             const existingState = state[key] ?? {};

@@ -27,16 +27,24 @@
 .PARAMETER Password
     SFTP password. Default: blank.
 
+.PARAMETER RoomType
+    Room type to build and deploy: "huddle" (default) or "dual-display".
+    Selects the npm build script and dist directory accordingly.
+
 .PARAMETER SkipBuild
-    Skip the npm build step and use the existing dist-app/ folder.
+    Skip the npm build step and use the existing dist folder.
 
 .EXAMPLE
     .\scripts\deploy-ui.ps1 -ProcessorIp 192.168.104.171
-    Build and deploy the UI to slot 1.
+    Build and deploy the huddle UI to slot 1.
+
+.EXAMPLE
+    .\scripts\deploy-ui.ps1 -ProcessorIp 192.168.104.171 -RoomType dual-display
+    Build and deploy the dual-display UI to slot 1.
 
 .EXAMPLE
     .\scripts\deploy-ui.ps1 -ProcessorIp 192.168.104.171 -SkipBuild
-    Deploy the existing dist-app/ without rebuilding.
+    Deploy the existing dist folder without rebuilding.
 #>
 
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingPlainTextForPassword', '')]
@@ -49,6 +57,9 @@ param(
 
     [string] $Username,
     [string] $Password,
+
+    [ValidateSet('huddle', 'dual-display')]
+    [string] $RoomType = 'huddle',
 
     [switch] $SkipBuild
 )
@@ -73,13 +84,20 @@ if (-not $PSBoundParameters.ContainsKey('Username')) {
 if (-not $PSBoundParameters.ContainsKey('Password')) {
     $Password = if ($envCfg['PROCESSOR_PASSWORD']) { $envCfg['PROCESSOR_PASSWORD'] } else { '' }
 }
+if (-not $PSBoundParameters.ContainsKey('RoomType') -and $envCfg['ROOM_TYPE']) {
+    $RoomType = $envCfg['ROOM_TYPE']
+}
 if ($Slot -eq 0) { $Slot = 1 }
 
 if (-not $ProcessorIp) {
     throw "ProcessorIp is required. Pass -ProcessorIp or set PROCESSOR_IP in .env"
 }
 $uiRoot = Join-Path $root 'mobile-control-ui'
-$distDir = Join-Path $uiRoot 'dist-app'
+
+# Resolve dist directory and npm build script from RoomType
+$buildScript = "build:$RoomType"
+$distDirName = if ($RoomType -eq 'huddle') { 'dist-app' } else { "dist-$RoomType" }
+$distDir = Join-Path $uiRoot $distDirName
 
 function Write-Step([string] $msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
 function Write-OK([string] $msg)   { Write-Host "    OK  $msg" -ForegroundColor Green }
@@ -87,23 +105,23 @@ function Write-OK([string] $msg)   { Write-Host "    OK  $msg" -ForegroundColor 
 # ─── Build ────────────────────────────────────────────────────────────────────
 
 if (-not $SkipBuild) {
-    Write-Step "Building React app..."
+    Write-Step "Building React app ($RoomType)..."
     Push-Location $uiRoot
     try {
-        npm run build:app
-        if ($LASTEXITCODE -ne 0) { throw "npm run build:app failed (exit $LASTEXITCODE)" }
+        npm run $buildScript
+        if ($LASTEXITCODE -ne 0) { throw "npm run $buildScript failed (exit $LASTEXITCODE)" }
     } finally {
         Pop-Location
     }
-    Write-OK "Build complete → dist-app/"
+    Write-OK "Build complete → $distDirName/"
 }
 
 if (-not (Test-Path $distDir)) {
-    throw "dist-app/ not found at $distDir. Run without -SkipBuild or run 'npm run build:app' first."
+    throw "$distDirName/ not found at $distDir. Run without -SkipBuild or run 'npm run $buildScript' first."
 }
 
 $files = Get-ChildItem -Path $distDir -Recurse -File
-Write-Step "Files to upload: $($files.Count) files from dist-app/"
+Write-Step "Files to upload: $($files.Count) files from $distDirName/"
 
 # ─── Posh-SSH ─────────────────────────────────────────────────────────────────
 

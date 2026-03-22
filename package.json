@@ -5,12 +5,16 @@
   "scripts": {
     "dev":             "npm run dev --prefix mobile-control-ui",
     "build":           "npm run build --prefix mobile-control-ui",
-    "build:app":       "npm run build:app --prefix mobile-control-ui",
-    "install:ui":      "npm install --prefix mobile-control-ui",
-    "get-release":     "pwsh scripts/get-release.ps1",
-    "deploy":          "pwsh scripts/deploy-processor.ps1",
-    "deploy:config":   "pwsh scripts/deploy-processor.ps1 -ConfigOnly",
-    "deploy:ui":       "pwsh scripts/deploy-ui.ps1",
-    "deploy:all":      "pwsh scripts/deploy-all.ps1"
+    "build:app":              "npm run build:app --prefix mobile-control-ui",
+    "build:huddle":           "npm run build:huddle --prefix mobile-control-ui",
+    "build:dual-display":     "npm run build:dual-display --prefix mobile-control-ui",
+    "install:ui":             "npm install --prefix mobile-control-ui",
+    "get-release":            "pwsh scripts/get-release.ps1",
+    "deploy":                 "pwsh scripts/deploy-processor.ps1",
+    "deploy:config":          "pwsh scripts/deploy-processor.ps1 -ConfigOnly",
+    "deploy:ui":              "pwsh scripts/deploy-ui.ps1",
+    "deploy:huddle":          "pwsh scripts/deploy-ui.ps1 -RoomType huddle",
+    "deploy:dual-display":    "pwsh scripts/deploy-ui.ps1 -RoomType dual-display",
+    "deploy:all":             "pwsh scripts/deploy-all.ps1"
   }
 }

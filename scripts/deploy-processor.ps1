@@ -134,7 +134,17 @@ if (-not $ConfigOnly) {
 # ─── Resolve config path ──────────────────────────────────────────────────────
 
 if (-not $ConfigPath) {
-    $ConfigPath = Join-Path $root 'config\configurationFile.json'
+    # Map room type names to config file names
+    $configMap = @{
+        'huddle'        = 'configurationFile-Huddle.json'
+        'dual-display'  = 'configurationFile-DualDisplay.json'
+    }
+    $roomType = $envCfg['ROOM_TYPE']
+    if ($roomType -and $configMap.ContainsKey($roomType)) {
+        $ConfigPath = Join-Path $root "config\$($configMap[$roomType])"
+    } else {
+        $ConfigPath = Join-Path $root 'config\configurationFile.json'
+    }
 }
 
 if (-not $SkipConfig -and -not (Test-Path $ConfigPath)) {
@@ -208,6 +218,14 @@ if (-not $SkipConfig) {
             if (-not (Test-SFTPPath -SessionId $sftpSession.SessionId -Path $remoteConfig)) {
                 Write-Host "    Creating remote directory $remoteConfig ..."
                 $sftpSession.Session.CreateDirectory($remoteConfig)
+            }
+            # Remove any stale configurationFile*.json before uploading to avoid the
+            # "Multiple Portal Configuration files present" error on program load.
+            $existing = Get-SFTPChildItem -SessionId $sftpSession.SessionId -Path $remoteConfig |
+                        Where-Object { $_.Name -like '*configurationFile*.json' }
+            foreach ($stale in $existing) {
+                Write-Host "    Removing stale config: $($stale.Name)"
+                Remove-SFTPItem -SessionId $sftpSession.SessionId -Path "$remoteConfig/$($stale.Name)"
             }
             Set-SFTPItem -SessionId $sftpSession.SessionId -Path $ConfigPath -Destination $remoteConfig -Force
             Write-Success $configName

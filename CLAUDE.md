@@ -154,16 +154,104 @@ not via a DSP. Set `hasDsp: false` in room properties when using display volume.
 ### Rooms plugin
 
 The upstream `epi-essentials-rooms` release is **incompatible** with Essentials v2.28.0.
-Use the rebuilt plugin in `releases/PDT.Plugins.Essentials.Rooms-2.1.1.cplz` (built from
+Use the rebuilt plugin in `releases/PDT.Plugins.Essentials.Rooms-2.1.4.cplz` (built from
 the fork `rod-driscoll/epi-essentials-rooms`, branch `feature/selected-source-key-feedback`,
 which is based on `feature/essentials-v2-compat`).
 
 Do not replace this with the upstream `-compat.cplz` from GitHub — it will silently fail to load.
 
-The `2.1.1` build adds `SelectedSourceKey` and `CurrentSourceInfoKey` properties to both
-`EssentialsHuddleSpaceRoom` and `EssentialsDualDisplayRoom`. These do NOT currently appear in
-the MobileControl WebSocket room state (the bridge ignores arbitrary properties), but the
-properties are there for future use if the bridge serialization is ever extended.
+The `2.1.4` build fixes bugs in `EssentialsDualDisplayRoom` and the factory registration (see below),
+and adds `SelectedSourceKey` and `CurrentSourceInfoKey` properties to both `EssentialsHuddleSpaceRoom`
+and `EssentialsDualDisplayRoom`. These do NOT currently appear in the MobileControl WebSocket
+room state (the bridge ignores arbitrary properties), but the properties are there for future use.
+
+#### Building the rooms plugin locally
+
+The plugin lives at `D:\repos\PepperDash\epi-essentials-rooms` (fork: `rod-driscoll/epi-essentials-rooms`).
+Use the **4.72 project** (`PDT.Plugins.Essentials.Rooms.4.72.csproj`) — this is the Essentials v2 build
+targeting .NET 4.7.2 with `ESSENTIALS_V2` defined. The older `.csproj` targets .NET CE 3.5 (v1 only).
+
+```powershell
+# 1. Restore NuGet packages (only needed once, or after clean)
+cd D:\repos\PepperDash\epi-essentials-rooms
+& "C:\Program Files (x86)\NuGet\nuget.exe" restore src\PDT.Plugins.Essentials.Rooms.4.72.csproj -PackagesDirectory packages
+
+# 2. Build
+& "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe" `
+    src\PDT.Plugins.Essentials.Rooms.4.72.csproj /p:Configuration=Release /p:Platform=AnyCPU /v:minimal
+# Output: src\bin\Release\PDT.Plugins.Essentials.Rooms.dll
+
+# 3. Package as CPLZ (a CPLZ is just a ZIP containing the DLL)
+$version = "2.1.x"   # bump as needed in src\Properties\AssemblyInfo.cs first
+$cplz = "D:\repos\PepperDash\essentials-2-dev\releases\PDT.Plugins.Essentials.Rooms-$version.cplz"
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$zip = [System.IO.Compression.ZipFile]::Open($cplz, 'Create')
+[System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+  $zip,
+  "D:\repos\PepperDash\epi-essentials-rooms\src\bin\Release\PDT.Plugins.Essentials.Rooms.dll",
+  "PDT.Plugins.Essentials.Rooms.dll", "Optimal") | Out-Null
+$zip.Dispose()
+
+# 4. Remove old version from releases/, then deploy
+npm run deploy   # from essentials-2-dev root
+```
+
+**Dependencies already in place:**
+
+- `lib/` — Essentials v2.28.0 DLLs (extracted from CPZ; do not change)
+- `C:\ProgramData\Crestron\SDK\SimplSharpPro.exe` — Crestron runtime (installed by Crestron Toolbox)
+- `packages/Crestron.SimplSharp.SDK.Library.2.21.226` — restored by nuget above
+
+**Note:** GitHub Actions CI is not enabled on the fork. Build locally as above.
+
+#### Adding a new room type to this plugin
+
+1. Create the room class (e.g. `EssentialsMyNewRoom.cs`) extending `EssentialsRoomBase`.
+2. Add a `case "mynewtype":` entry in `EssentialsRoomsDeviceFactory.BuildDevice()`.
+3. Add `"mynewtype"` to the `TypeNames` list in the same factory class.
+4. Bump the version in `src/Properties/AssemblyInfo.cs`.
+5. Build, package, deploy (see steps above).
+
+**Critical:** the factory must implement `IPluginDeviceFactory` (not just `IDeviceFactory`).
+`IPluginDeviceFactory` adds the `MinimumEssentialsFrameworkVersion` property that Essentials uses
+to discover and load plugin factories at startup. Without it the plugin DLL loads but the factory
+is silently skipped — room types won't be registered and you'll see
+`Device type 'xyz' not found in DeviceFactory` even though the assembly loaded successfully.
+
+```csharp
+public class EssentialsRoomsDeviceFactory : IPluginDeviceFactory
+{
+    public string MinimumEssentialsFrameworkVersion { get; } = "2.0.0";
+    // ...
+}
+```
+
+Diagnosis: if `devlist` is missing `room1` and the boot log shows the assembly loaded but no
+"Loading plugin factory: PDT.Plugins.Essentials.Rooms" line, the factory interface is wrong.
+
+#### Known bugs fixed in this fork (vs upstream `feature/essentials-v2-compat`)
+
+`EssentialsRoomsDeviceFactory` used `IDeviceFactory` instead of `IPluginDeviceFactory`:
+
+- Essentials v2 discovers factories by scanning for `IPluginDeviceFactory` (not `IDeviceFactory`)
+- Without this, room types were never registered despite the DLL loading fine
+- Fix: implement `IPluginDeviceFactory` and add `MinimumEssentialsFrameworkVersion = "2.0.0"`
+
+`EssentialsDualDisplayRoom` had two bugs that caused `volumes: {}` in the room WebSocket state:
+
+1. **RightDisplay copy-paste bug** — constructor assigned `LeftDisplay` instead of `RightDisplay`
+   when registering the right display, leaving `RightDisplay` null.
+
+2. **VideoCodec null throw** — constructor threw `ArgumentNullException` when no `videoCodecKey`
+   is in config, so `InitializeRoom()` never ran and `CurrentVolumeControls` was never set.
+   Fixed by downgrading to a log warning; all `VideoCodec.` call sites are now null-guarded.
+
+**Diagnosis pattern for `volumes: {}`:**
+
+1. Check `devlist` on processor — if volume device (e.g. `dsp-1-program`) is missing, it's a
+   connectivity issue (check `ping` and TCP port). If present, it's a C# wiring issue.
+2. Look at processor error log for exceptions during room construction — a caught exception in the
+   constructor silently leaves the room partially initialised.
 
 ### Samsung MDC display plugin
 
@@ -189,6 +277,7 @@ Do not replace this with `v1.6.1` or `v1.6.2` from GitHub until the PR is merged
 | `MOBILEADDUICLIENT` silently adds 0 clients | `system_url` must match the portal regex |
 | MobileControl constructor throws NullReferenceException | Add `"serverUrl"` to mobilecontrol device properties |
 | Rooms plugin silently not loaded | Use rebuilt CPLZ, not upstream GitHub release |
+| `room1` missing from `devlist` after progload | `dualdisplay` room needs `displays` block in config (see Essentials config section) |
 | Samsung MDC input switching does nothing | `activeInputs` array must be present in display properties |
 | Samsung MDC crashes on volume feedback | Use patched CPLZ — see Samsung MDC plugin note above |
 | Volume hook returns `undefined` on load | Transient — resolves once room state arrives via WebSocket |

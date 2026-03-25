@@ -248,6 +248,15 @@ if ($cplzFiles) {
                     Write-Host "    Creating remote directory $remotePlugins ..."
                     $sftpSession.Session.CreateDirectory($remotePlugins)
                 }
+                # Remove any stale versions of this plugin (same stem, different version suffix)
+                # e.g. remove PDT.Plugins.Essentials.Rooms-2.1.2.cplz before uploading -2.1.4.cplz
+                $stem = $cplz.BaseName -replace '-[\d\.]+$', ''
+                $stalePlugins = Get-SFTPChildItem -SessionId $sftpSession.SessionId -Path $remotePlugins |
+                    Where-Object { $_.Name -like "$stem*.cplz" -and $_.Name -ne $cplz.Name }
+                foreach ($stale in $stalePlugins) {
+                    Write-Host "    Removing stale plugin: $($stale.Name)"
+                    Remove-SFTPItem -SessionId $sftpSession.SessionId -Path "$remotePlugins/$($stale.Name)"
+                }
                 Set-SFTPItem -SessionId $sftpSession.SessionId -Path $cplz.FullName -Destination $remotePlugins -Force
                 Write-Success $cplz.Name
             } finally {

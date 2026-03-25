@@ -9,3 +9,4 @@ logs/
 mobile-control-ui/node_modules/
 mobile-control-ui/dist/
 mobile-control-ui/dist-app/
+mobile-control-ui/dist-dual-display/

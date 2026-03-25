@@ -44,7 +44,7 @@
           "control": {
             "method": "tcpIp",
             "tcpSshProperties": {
-              "address": "192.168.41.242",
+              "address": "192.168.111.77",
               "port": 1515,
               "autoReconnect": true,
               "autoReconnectIntervalMs": 10000
@@ -71,7 +71,7 @@
           "control": {
             "method": "tcpIp",
             "tcpSshProperties": {
-              "address": "192.168.41.182",
+              "address": "192.168.111.125",
               "port": 1515,
               "autoReconnect": true,
               "autoReconnectIntervalMs": 10000
@@ -131,10 +131,14 @@
       {
         "key": "room1",
         "name": "Conference Room",
-        "type": "huddle",
+        "type": "dualdisplay",
         "properties": {
           "defaultDisplayKey": "display-1",
-          "defaultAudioKey": "dsp-1",
+          "displays": {
+            "leftDisplay":  { "key": "display-1", "name": "Samsung Display 1" },
+            "rightDisplay": { "key": "display-2", "name": "Samsung Display 2" }
+          },
+          "defaultAudioKey": "dsp-1-program",
           "sourceListKey": "default",
           "defaultSourceItem": "source-1",
           "hasDsp": true,
@@ -143,9 +147,8 @@
           "volumes": {
             "master": {
               "level": 40,
-              "deviceKey": "dsp-1",
-              "label": "Volume",
-              "levelInstanceTag": "program"
+              "deviceKey": "dsp-1-program",
+              "label": "Volume"
             }
           },
           "logo": {
